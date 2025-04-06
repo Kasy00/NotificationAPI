@@ -1,0 +1,54 @@
+# Ignore build outputs
+bin/
+obj/
+
+# User-specific files
+*.user
+*.rsuser
+*.suo
+*.userosscache
+*.sln.docstates
+
+# Logs
+*.log
+
+# Visual Studio Code
+.vscode/
+*.code-workspace
+
+# Dependency directories
+node_modules/
+packages/
+
+# Environment variables
+.env
+.env.*
+
+# Database files
+*.mdf
+*.ldf
+
+# Entity Framework migrations
+Migrations/
+
+# Rider IDE files
+.idea/
+
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# Resharper files
+_ReSharper*/
+*.DotSettings.user
+
+# NuGet packages
+*.nupkg
+*.snupkg
+
+# Lock files
+project.lock.json
+project.fragment.lock.json
+
+# Publish outputs
+wwwroot/
