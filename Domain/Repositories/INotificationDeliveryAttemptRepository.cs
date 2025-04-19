@@ -4,5 +4,5 @@ namespace NotificationSystem.Domain.Repositories;
 
 public interface INotificationDeliveryAttemptRepository : IRepository<NotificationDeliveryAttempt>
 {
-    Task<IEnumerable<NotificationDeliveryAttempt>> GetAttemptsByNotificationIdAsync(Guid notificationId);
+    Task<IEnumerable<NotificationDeliveryAttempt>> GetAttemptsByNotificationId(Guid notificationId);
 }
