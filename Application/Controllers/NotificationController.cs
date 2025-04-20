@@ -4,6 +4,7 @@ using NotificationSystem.Domain.Dto;
 
 namespace NotificationSystem.Application.Controllers;
 
+[ApiController]
 [Route("api/v0/[controller]")]
 public class NotificationController : ControllerBase
 {

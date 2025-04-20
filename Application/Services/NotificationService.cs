@@ -28,7 +28,7 @@ public class NotificationService : INotificationService
             TimeZone = createNotificationDto.TimeZone,
             RecipientId = createNotificationDto.RecipientId,
             ScheduledDeliveryTime = createNotificationDto.ScheduledDeliveryTime,
-            Status = NotificationStatus.Created,
+            Status = NotificationStatus.Scheduled,
             RetryCount = 0,
             CreatedAt = DateTime.UtcNow
         };
@@ -55,10 +55,6 @@ public class NotificationService : INotificationService
             };
 
             await _unitOfWork.OutboxMessageRepository.Add(outboxMessage);
-
-            notification.Status = NotificationStatus.Scheduled;
-            
-            await _unitOfWork.NotificationRepository.Update(notification);
 
             await _unitOfWork.SaveChangesAsync();
             await _unitOfWork.CommitTransactionAsync();

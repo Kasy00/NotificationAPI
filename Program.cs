@@ -15,10 +15,14 @@ builder.Services.AddSwaggerGen();
 
 builder.Services.AddDbContext<NotificationDbContext>(options => {
     options.UseNpgsql(configuration.GetConnectionString("DefaultConnection"));
+    options.EnableSensitiveDataLogging();
 });
 
 builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 builder.Services.AddScoped<INotificationService, NotificationService>();
+
+builder.Services.AddHostedService<OutboxProcessorService>();
+builder.Services.AddHostedService<NotificationSchedulerService>();
 
 builder.Services.AddMassTransit(x => {
     x.AddConsumer<PushNotificationConsumer>();
@@ -68,6 +72,8 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+
+app.UseRouting();
 
 app.UseAuthorization();
 
