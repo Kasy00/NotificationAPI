@@ -24,7 +24,7 @@ public class NotificationService : INotificationService
         {
             Id = Guid.NewGuid(),
             Content = createNotificationDto.Content,
-            Channel = createNotificationDto.channel,
+            Channel = createNotificationDto.Channel,
             TimeZone = createNotificationDto.TimeZone,
             RecipientId = createNotificationDto.RecipientId,
             ScheduledDeliveryTime = createNotificationDto.ScheduledDeliveryTime,
