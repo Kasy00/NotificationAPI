@@ -1,4 +1,6 @@
 using MassTransit;
+using NotificationSystem.Application.Services;
+using NotificationSystem.Domain.Entities;
 using NotificationSystem.Domain.Messages;
 
 namespace NotificationSystem.Consumers;
@@ -6,11 +8,14 @@ namespace NotificationSystem.Consumers;
 public class EmailNotificationConsumer : IConsumer<EmailNotificationMessage>
 {
     private readonly ILogger<EmailNotificationConsumer> _logger;
+    private readonly IMetricsService _metricsService;
     private readonly Random _random = new Random();
+    private static readonly string ServerId = Guid.NewGuid().ToString();
 
-    public EmailNotificationConsumer(ILogger<EmailNotificationConsumer> logger)
+    public EmailNotificationConsumer(ILogger<EmailNotificationConsumer> logger, IMetricsService metricsService)
     {
         _logger = logger;
+        _metricsService = metricsService;
     }
 
     public async Task Consume(ConsumeContext<EmailNotificationMessage> context)
@@ -29,6 +34,8 @@ public class EmailNotificationConsumer : IConsumer<EmailNotificationMessage>
                 NotificationId = message.NotificationId,
                 IsSuccessful = true,
            });
+
+           await _metricsService.RecordNotificationDelivered(ServerId, NotificationChannel.Email);
         }
         else
         {
@@ -40,6 +47,8 @@ public class EmailNotificationConsumer : IConsumer<EmailNotificationMessage>
                 IsSuccessful = false,
                 ErrorMessage = "Delivery failure"
             });
+
+            await _metricsService.RecordNotificationFailed(ServerId, NotificationChannel.Email);
         }
     }
 }

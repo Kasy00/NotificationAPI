@@ -20,6 +20,7 @@ builder.Services.AddDbContext<NotificationDbContext>(options => {
 
 builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 builder.Services.AddScoped<INotificationService, NotificationService>();
+builder.Services.AddScoped<IMetricsService, MetricsService>();
 
 builder.Services.AddHostedService<OutboxProcessorService>();
 builder.Services.AddHostedService<NotificationSchedulerService>();
@@ -39,12 +40,14 @@ builder.Services.AddMassTransit(x => {
         
         cfg.ReceiveEndpoint("push-notification-queue", e =>{
             e.PrefetchCount = 1;
+            e.UseConcurrencyLimit(1);
             e.ConfigureConsumer<PushNotificationConsumer>(context);
         });
 
         cfg.ReceiveEndpoint("email-notification-queue", e =>
         {
-            e.PrefetchCount = 1; // Process only one message at a time
+            e.PrefetchCount = 1;
+            e.UseConcurrencyLimit(1);
             e.ConfigureConsumer<EmailNotificationConsumer>(context);
         });
 

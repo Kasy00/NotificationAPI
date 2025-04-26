@@ -11,11 +11,13 @@ public class NotificationService : INotificationService
 {
     private readonly IUnitOfWork _unitOfWork;
     private readonly IBus _bus;
+    private readonly ILogger<NotificationService> _logger;
 
-    public NotificationService(IUnitOfWork unitOfWork, IBus bus)
+    public NotificationService(IUnitOfWork unitOfWork, IBus bus, ILogger<NotificationService> logger)
     {
         _unitOfWork = unitOfWork;
         _bus = bus;
+        _logger = logger;
     }
 
     public async Task<Guid> CreateNotification(CreateNotificationDto createNotificationDto)
@@ -176,12 +178,26 @@ public class NotificationService : INotificationService
 
         foreach (var notification in scheduledNotifications)
         {
-            await ProcessNotification(notification);
+            if (IsAppropriateTimeToSend(notification))
+            {
+                await ProcessNotification(notification);
+            }
+            else
+            {
+                await RescheduleForAppropriateTime(notification);
+            }
         }
 
         foreach (var notification in failedNotifications)
         {
-            await ProcessNotification(notification);
+            if (IsAppropriateTimeToSend(notification))
+            {
+                await ProcessNotification(notification);
+            }
+            else
+            {
+                await RescheduleForAppropriateTime(notification);
+            }
         }
     }
 
@@ -240,5 +256,90 @@ public class NotificationService : INotificationService
             await _unitOfWork.RollbackTransactionAsync();
             throw;
         }
+    }
+
+    public async Task<Notification> GetNotificationById(Guid id)
+    {
+        var notification = await _unitOfWork.NotificationRepository.GetById(id);
+
+        if (notification == null)
+        {
+            return null;
+        }
+
+        return notification;
+    }
+
+    public async Task<IEnumerable<Notification>> GetNotifications(string status = null)
+    {
+        IEnumerable<Notification> notifications;
+
+        if (string.IsNullOrEmpty(status))
+        {
+            notifications = await _unitOfWork.NotificationRepository.GetAll();
+        }
+        else
+        {
+            if (Enum.TryParse<NotificationStatus>(status, true, out var notificationStatus))
+            {
+                notifications = await _unitOfWork.NotificationRepository.GetByStatus(notificationStatus);
+            }
+            else
+            {
+                return Enumerable.Empty<Notification>();
+            }
+        }
+
+        return notifications;
+    }
+
+    private bool IsAppropriateTimeToSend(Notification notification)
+    {
+        try
+        {
+            var timeZoneInfo = TimeZoneInfo.FindSystemTimeZoneById(notification.TimeZone);
+            var userLocalTime = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, timeZoneInfo);
+
+            var hour = userLocalTime.Hour;
+            return hour >= 7 && hour < 22;
+        }
+        catch (TimeZoneNotFoundException)
+        {
+            _logger.LogWarning($"Nieprawidłowa strefa czasowa: {notification.TimeZone} dla powiadomienia ID: {notification.Id}");
+            return true;
+        }
+    }
+
+    private async Task RescheduleForAppropriateTime(Notification notification)
+    {
+        try
+        {
+            var timeZoneInfo = TimeZoneInfo.FindSystemTimeZoneById(notification.TimeZone);
+            var userLocalTime = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, timeZoneInfo);
+
+            DateTime nextAppropriateTime;
+            if (userLocalTime.Hour < 7)
+            {
+                nextAppropriateTime = new DateTime(userLocalTime.Year, userLocalTime.Month, userLocalTime.Day, 7, 0, 0);
+            }
+            else
+            {
+                nextAppropriateTime = new DateTime(userLocalTime.Year, userLocalTime.Month, userLocalTime.Day, 7, 0, 0).AddDays(1);
+            }
+
+            var nextAppropriateTimeUtc = TimeZoneInfo.ConvertTimeToUtc(nextAppropriateTime, timeZoneInfo);
+
+            notification.ScheduledDeliveryTime = nextAppropriateTimeUtc;
+            
+            await _unitOfWork.NotificationRepository.Update(notification);
+            await _unitOfWork.SaveChangesAsync();
+
+            _logger.LogInformation($"Powiadomienie {notification.Id} przełożone na {nextAppropriateTimeUtc} UTC (lokalne: {nextAppropriateTime})");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, $"Błąd podczas przełożenia powiadomienia {notification.Id}");
+        }
+        
     }
 }

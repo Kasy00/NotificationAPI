@@ -1,4 +1,6 @@
 using MassTransit;
+using NotificationSystem.Application.Services;
+using NotificationSystem.Domain.Entities;
 using NotificationSystem.Domain.Messages;
 
 namespace NotificationSystem.Consumers;
@@ -6,11 +8,14 @@ namespace NotificationSystem.Consumers;
 public class PushNotificationConsumer : IConsumer<PushNotificationMessage>
 {
     private readonly ILogger<PushNotificationConsumer> _logger;
+    private readonly IMetricsService _metricsService;
     private readonly Random _random = new Random();
+    private static readonly string ServerId = Guid.NewGuid().ToString();
 
-    public PushNotificationConsumer(ILogger<PushNotificationConsumer> logger)
+    public PushNotificationConsumer(ILogger<PushNotificationConsumer> logger, IMetricsService metricsService)
     {
         _logger = logger;
+        _metricsService = metricsService;
     }
 
     public async Task Consume(ConsumeContext<PushNotificationMessage> context)
@@ -29,6 +34,8 @@ public class PushNotificationConsumer : IConsumer<PushNotificationMessage>
                 NotificationId = message.NotificationId,
                 IsSuccessful = true,
            });
+
+           await _metricsService.RecordNotificationDelivered(ServerId, NotificationChannel.Push);
         }
         else
         {
@@ -40,6 +47,8 @@ public class PushNotificationConsumer : IConsumer<PushNotificationMessage>
                 IsSuccessful = false,
                 ErrorMessage = "Delivery failure"
             });
+
+            await _metricsService.RecordNotificationFailed(ServerId, NotificationChannel.Push);
         }
     }
 }

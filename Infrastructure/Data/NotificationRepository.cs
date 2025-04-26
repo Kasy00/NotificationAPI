@@ -24,4 +24,11 @@ public class NotificationRepository : GenericRepository<Notification>, INotifica
             .Where(n => n.Status == NotificationStatus.RetryScheduled && n.RetryCount < 3)
             .ToListAsync();
     }
+
+    public async Task<IEnumerable<Notification>> GetByStatus(NotificationStatus status)
+    {
+        return await _dbContext.Notifications
+            .Where(n => n.Status == status)
+            .ToListAsync();
+    }
 }

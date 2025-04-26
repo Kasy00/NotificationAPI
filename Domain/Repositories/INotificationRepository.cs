@@ -6,4 +6,5 @@ public interface INotificationRepository : IRepository<Notification>
 {
     Task<IEnumerable<Notification>> GetScheduledNotifications(DateTime beforeTime);
     Task<IEnumerable<Notification>> GetFailedNotificationsForRetry();
+    Task<IEnumerable<Notification>> GetByStatus(NotificationStatus status);
 }

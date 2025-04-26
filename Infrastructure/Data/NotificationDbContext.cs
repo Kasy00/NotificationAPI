@@ -14,6 +14,7 @@ public class NotificationDbContext : DbContext
     public DbSet<Notification> Notifications { get; set; }
     public DbSet<NotificationDeliveryAttempt> NotificationDeliveryAttempts { get; set; }
     public DbSet<OutboxMessage> OutboxMessages { get; set; }
+    public DbSet<NotificationMetrics> NotificationMetrics { get; set; }
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {
